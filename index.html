@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -43,19 +43,18 @@
 <body>
   <div class="wrap">
     <h1 class="title">🏋️‍♀️ Exercise Trainer Assistant</h1>
-    <p class="sub">Step 1 → 貼上你的訓練紀錄；Step 2 → 選部位與區間；一鍵計算 <span class="muted">Volume = Weight × Reps × Sets</span>。</p>
+    <p class="sub">Step 1 → paste your training logs; Step 2 → select body part & recent sessions; one-click compute <span class="muted">Volume = Weight × Reps × Sets</span>.</p>
 
     <!-- Page 1: data input -->
     <section id="page1" class="card">
       <div class="stack">
         <div class="row" style="align-items:center;justify-content:space-between">
-          <div class="pill">步驟 1｜輸入資料</div>
-          <button class="btn btn-secondary" id="btnFillSample">填入示例</button>
+          <div class="pill">STEP 1 | Input Data</div>
         </div>
-        <label class="muted">將每一筆紀錄各佔一行，格式可鬆散，工具會自動解析。</label>
-        <textarea id="rawInput" placeholder="e.g. 2025/9/18, Chest, Flat Smith Press, Smith Machine, 90kg, 10 reps, 1 sets"></textarea>
+        <label class="muted">One record per line. The parser is tolerant, but the <strong>date must have "/" or "-" and be immediately followed by a comma</strong>, e.g.: <code>2025/09/18, Chest, ...</code></label>
+        <textarea id="rawInput" placeholder="e.g. 2025/09/18, Chest, Flat Smith Press, Smith Machine, 90kg, 10 reps, 1 sets"></textarea>
         <div class="row" style="justify-content:flex-end">
-          <button id="toPage2" class="btn btn-primary">下一步 → 選部位與次數</button>
+          <button id="toPage2" class="btn btn-primary">Next → Choose body part</button>
         </div>
         <div id="p1Error" class="err"></div>
       </div>
@@ -67,41 +66,41 @@
     <section id="page2" class="card hidden">
       <div class="stack">
         <div class="row" style="align-items:center;justify-content:space-between">
-          <div class="pill">步驟 2｜選部位與最近次數</div>
+          <div class="pill">STEP 2 | Select body part & recent sessions</div>
           <div class="row">
-            <button class="btn btn-secondary" id="backTo1">← 返回</button>
-            <button class="btn btn-primary" id="btnCompute">計算 Volume</button>
+            <button class="btn btn-secondary" id="backTo1">← Back</button>
+            <button class="btn btn-primary" id="btnCompute">Compute Volume</button>
           </div>
         </div>
 
         <div class="grid cols-2">
           <div>
-            <label for="bodyChoice" class="muted">你想統計哪個部位的訓練量？（輸入 1 或 2）</label>
+            <label for="bodyChoice" class="muted">Which body part to summarize? (type 1 or 2)</label>
             <div class="row">
               <select id="bodyChoice">
                 <option value="1">1 = Chest</option>
                 <option value="2">2 = Back</option>
               </select>
-              <input id="recentCount" type="number" min="1" step="1" value="4" title="最近幾次（依日期去重的訓練日）" />
+              <input id="recentCount" type="number" min="1" step="1" value="4" title="How many latest training days (dedup by date)?" />
             </div>
-            <div class="note">會依日期去重，抓取該部位最近 <span id="recentCountEcho">4</span> 次的總重量。</div>
+            <div class="note">We deduplicate by date and take the latest <span id="recentCountEcho">4</span> days for that body part.</div>
           </div>
           <div>
-            <div class="note">特殊條件自動套用：<br/>• 若 <code>Equipment</code> 含 <b>Dumbbell</b> 或 <b>Cable</b>，或重量寫成 <code>xxkg × 2</code> → 以 <b>雙邊</b>計算（重量×2）。</div>
+            <div class="note">Special rules are auto-applied:<br/>• If <code>Equipment</code> contains <b>Dumbbell</b> or <b>Cable</b>, or the weight is written like <code>xxkg × 2</code>/<code>x2</code> → treat as <b>bilateral</b> (Weight × 2).</div>
           </div>
         </div>
 
         <div class="hr"></div>
 
         <div class="kpi">
-          <div class="box"><h4>部位</h4><div id="kpiPart">—</div></div>
-          <div class="box"><h4>最近次數（天）</h4><div id="kpiDays">—</div></div>
-          <div class="box"><h4>總 Volume</h4><div id="kpiTotal">—</div></div>
+          <div class="box"><h4>Part</h4><div id="kpiPart">—</div></div>
+          <div class="box"><h4>Days counted</h4><div id="kpiDays">—</div></div>
+          <div class="box"><h4>Total Volume</h4><div id="kpiTotal">—</div></div>
         </div>
 
         <div id="resultArea" class="stack"></div>
         <div id="p2Error" class="err"></div>
-        <div class="footer">提示：點擊任一日期可展開細節。</div>
+        <div class="footer">Tip: click a date row to expand details.</div>
       </div>
     </section>
   </div>
@@ -112,43 +111,68 @@
     const el = (tag, cls) => { const n = document.createElement(tag); if (cls) n.className = cls; return n; };
     const trim = (s) => (s||'').toString().trim();
 
-    function parseDate(str){
-      // Accept formats like 2025/9/18, 2025-09-18, 2025.9.18
-      const t = str.replace(/\./g,'/').replace(/-/g,'/');
-      const m = t.match(/(20\d{2})\/(\d{1,2})\/(\d{1,2})/);
-      if(!m) return null;
-      const [_, y, mo, d] = m.map(Number);
-      const dt = new Date(y, mo-1, d);
-      if(dt && dt.getFullYear()===y && dt.getMonth()===mo-1 && dt.getDate()===d) return dt;
-      return null;
+    function isValidDateToken(token){
+      const t = String(token).trim();
+      const sep = t.includes('/') ? '/' : (t.includes('-') ? '-' : null);
+      if(!sep) return false;
+      const arr = t.split(sep);
+      if(arr.length!==3) return false;
+      const y = parseInt(arr[0],10);
+      const m = parseInt(arr[1],10);
+      const d = parseInt(arr[2],10);
+      if(!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return false;
+      if(String(y).length!==4 || y<2000 || y>2099) return false;
+      const dt = new Date(y, m-1, d);
+      return dt && dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===d;
     }
 
-    function normalizeNumber(token){
-      // Extract integer from patterns like "90kg", "11 reps", "2 set", "9reps"
-      const m = String(token).match(/(\d+(?:\.\d+)?)/);
-      return m ? parseFloat(m[1]) : NaN;
+    // Find a date token that is followed by a comma (spaces allowed before the comma)
+    function findDateWithComma(rawLine){
+      const s = String(rawLine);
+      const commaIdx = s.indexOf(',');
+      if(commaIdx===-1) return null;
+      // Allow spaces before the comma
+      let pre = s.slice(0, commaIdx);
+      // rtrim spaces
+      while(pre.length && pre[pre.length-1]===' ') pre = pre.slice(0,-1);
+      if(!isValidDateToken(pre)) return null;
+      const parts = pre.includes('/') ? pre.split('/') : pre.split('-');
+      const y = parseInt(parts[0],10), m = parseInt(parts[1],10), d = parseInt(parts[2],10);
+      const date = new Date(y, m-1, d);
+      return { date, token: pre };
+    }
+
+    function extractNumber(token){
+      let s = '';
+      const str = String(token);
+      for(let i=0;i<str.length;i++){
+        const ch = str[i];
+        if((ch>='0' && ch<='9') || ch==='.') s += ch;
+      }
+      return s ? parseFloat(s) : NaN;
     }
 
     function hasDoubleSided(info){
-      // Equipment contains Dumbbell or Cable OR format like "24kg × 2" or "24kgx2"
       const equip = (info.equipment||'').toLowerCase();
-      const dblByEquip = /(dumbbell|cable)/i.test(equip);
-      const dblByWeight = /x\s*2|×\s*2/i.test(info.weightRaw||'');
+      const dblByEquip = equip.includes('dumbbell') || equip.includes('cable');
+      const wr = (info.weightRaw||'').toLowerCase();
+      const dblByWeight = wr.includes('x2') || wr.includes('×2');
       return dblByEquip || dblByWeight;
     }
 
     function parseLine(line){
-      // Expected loose CSV-ish: date, bodyPart, exercise, equipment, weight, reps, sets
-      // We allow missing commas and inconsistent spacing.
-      const parts = line.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean);
-      if(parts.length < 3) return null;
-      // Find date token
-      let dateIdx = -1;
-      for(let i=0;i<parts.length;i++) if(parseDate(parts[i])) { dateIdx = i; break; }
-      if(dateIdx===-1) return null;
-      const date = parseDate(parts[dateIdx]);
+      const found = findDateWithComma(line);
+      if(!found) return null;
+      const date = found.date;
 
-      // Heuristics for fields
+      const parts = line.split(',').map(s=>s.trim()).filter(Boolean);
+      // ensure first token is a date token
+      let dateIdx = -1;
+      for(let i=0;i<parts.length;i++){
+        if(isValidDateToken(parts[i])){ dateIdx = i; break; }
+      }
+      if(dateIdx===-1) return null;
+
       const body = parts[dateIdx+1] || '';
       const exercise = parts[dateIdx+2] || '';
       const equipment = parts[dateIdx+3] || '';
@@ -156,17 +180,9 @@
       const repsRaw = parts[dateIdx+5] || '';
       const setsRaw = parts[dateIdx+6] || '';
 
-      // numeric
-      let weight = normalizeNumber(weightRaw);
-      let reps = normalizeNumber(repsRaw);
-      let sets = normalizeNumber(setsRaw);
-
-      // Some lines e.g. swimming may have distance instead of reps/sets; ignore for strength calc
-      if(Number.isNaN(weight)){
-        // still allow when weight explicitly "—" or missing; treat as NaN → skip later
-      }
-      if(Number.isNaN(reps) && /(rep|次)/i.test(repsRaw)) reps = normalizeNumber(repsRaw);
-      if(Number.isNaN(sets) && /(set|組)/i.test(setsRaw)) sets = normalizeNumber(setsRaw);
+      let weight = extractNumber(weightRaw);
+      let reps = extractNumber(repsRaw);
+      let sets = extractNumber(setsRaw);
 
       return { line, date, dateKey: date.toISOString().slice(0,10), body, exercise, equipment, weight, reps, sets, weightRaw, repsRaw, setsRaw };
     }
@@ -182,40 +198,14 @@
     let parsed = [];
 
     // ===== Page 1 actions =====
-    const sample = `2025/9/15, Chest, Incline Dumbbell Press, Dumbbell, 28kg, 13 reps, 4 sets, 
-
-2025/9/15, Chest, Incline Dumbbell Press, Dumbbell, 28kg, 8 reps, 1 sets,
-
-2025/9/15, Chest, Incline Dumbbell Press, Dumbbell, 24kg, 13 reps, 2 sets, 
-
-2025/9/15, Chest, Incline Dumbbell Press, Dumbbell, 24kg, 15 reps, 2 sets, 
-2025/9/15, Chest, Chest Press, Machine, 70kg, 7 reps, 1 sets, 
-2025/9/15, Swim, —, Pool, —, 30m, 5, 
-2025/9/18, Chest, Flat Smith Press, Smith Machine, 90kg, 10 reps, 1 sets, 
-2025/9/18, Chest, Flat Smith Press, Smith Machine, 90kg, 11 reps, 3 sets, 
-2025/9/18, Chest, Flat Smith Press, Smith Machine, 90kg, 9reps, 1 sets, 
-2025/9/18, Chest, Flat Smith Press, Smith Machine, 80kg, 11 reps, 1 sets, 
-2025/9/18, Chest, Flat Smith Press, Smith Machine, 80kg, 9reps, 1 sets
-
-2025/9/18, Chest, Flat Smith Press, Smith Machine, 80kg, 8reps, 1 sets
-2025/9/18, Swim, —, Pool, —, 30m, 4, 
-2025/9/21, Swim, —, Pool, —, 30m, 10 sets
-2025/9/22, Chest, Chest Press, Machine, 70kg, 13reps, 1 sets
-2025/9/22, Chest, Chest Press, Machine, 84kg, 11reps, 1 sets
-2025/9/22, Chest, Chest Press, Machine, 84kg, 9reps, 1 sets
-2025/9/22, Chest, Chest Press, Machine, 77kg, 10reps, 1 sets
-2025/9/22, Chest, Chest Press, Machine, 77kg, 9reps, 2 set`;
-
-    $('#btnFillSample').addEventListener('click',()=>{$('#rawInput').value = sample;});
-
     $('#toPage2').addEventListener('click',()=>{
       $('#p1Error').textContent = '';
       const txt = $('#rawInput').value.trim();
-      if(!txt){ $('#p1Error').textContent = '請先貼上訓練紀錄。'; return; }
-      const lines = txt.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      if(!txt){ $('#p1Error').textContent = 'Please paste your logs first.'; return; }
+      const lines = txt.split('
+').map(s=>s.trim()).filter(Boolean);
       parsed = lines.map(parseLine).filter(Boolean);
-      if(!parsed.length){ $('#p1Error').textContent = '格式無法解析，請確認每行含日期與項目。'; return; }
-      // Go next
+      if(!parsed.length){ $('#p1Error').textContent = 'No valid lines parsed. Ensure the date has "/" or "-" and is immediately followed by a comma.'; return; }
       $('#page1').classList.add('hidden');
       $('#page2').classList.remove('hidden');
     });
@@ -230,22 +220,22 @@
       $('#page2').classList.add('hidden');
       $('#page1').classList.remove('hidden');
       $('#p2Error').textContent = '';
+      const status = document.getElementById('p2Status');
+      if(status) status.textContent = '';
     });
 
-    // ===== Compute =====
+    // ===== Core compute helpers =====
     function computeOnce(target, recentN){
-      // Filter by target body part; ignore lines where weight/reps/sets are NaN
-      const rows = parsed.filter(r => /^(Chest|Back)$/i.test(trim(r.body)) && trim(r.body).toLowerCase()===target.toLowerCase());
+      const rows = parsed.filter(r => (trim(r.body).toLowerCase()==='chest' || trim(r.body).toLowerCase()==='back') && trim(r.body).toLowerCase()===target.toLowerCase());
       if(!rows.length){
-        return { ok:false, error:`沒有找到 ${target} 的紀錄。` };
+        return { ok:false, error:`No records for ${target}.` };
       }
-      // Group by dateKey
       const byDate = {};
       for(const r of rows){
         if(!byDate[r.dateKey]) byDate[r.dateKey] = [];
         byDate[r.dateKey].push(r);
       }
-      const dateKeys = Object.keys(byDate).sort((a,b)=> b.localeCompare(a)); // desc
+      const dateKeys = Object.keys(byDate).sort((a,b)=> b.localeCompare(a));
       const pickedDates = dateKeys.slice(0, recentN);
 
       let total = 0;
@@ -271,22 +261,15 @@
         total += subtotal;
         perDate.push({ dk, subtotal: Math.round(subtotal), details });
       }
-      const digest = JSON.stringify({
-        target,
-        recentN:pickedDates.length,
-        total: Math.round(total),
-        perDate: perDate.map(d=>({dk:d.dk, subtotal:d.subtotal}))
-      });
+      const digest = JSON.stringify({ target, recentN:pickedDates.length, total: Math.round(total), perDate: perDate.map(d=>({dk:d.dk, subtotal:d.subtotal})) });
       return { ok:true, target, pickedDates, total: Math.round(total), perDate, digest };
     }
 
     function renderResult(bundle){
-      // Render KPIs
       $('#kpiPart').textContent = bundle.target;
       $('#kpiDays').textContent = bundle.pickedDates.length;
       $('#kpiTotal').textContent = Intl.NumberFormat('en-US').format(bundle.total);
 
-      // Render result tables
       const resultArea = $('#resultArea');
       resultArea.innerHTML = '';
       bundle.perDate.forEach(group => {
@@ -294,9 +277,9 @@
         const header = el('div','row');
         header.style.justifyContent = 'space-between';
         const hLeft = el('div');
-        hLeft.innerHTML = `<strong>${group.dk}</strong> <span class="muted">（點擊展開 / 收合）</span>`;
+        hLeft.innerHTML = `<strong>${group.dk}</strong> <span class="muted">(click to toggle)</span>`;
         const hRight = el('div');
-        hRight.innerHTML = `<span class="pill">當日 Volume：<b>${group.subtotal}</b></span>`;
+        hRight.innerHTML = `<span class="pill">Day Volume: <b>${group.subtotal}</b></span>`;
         header.append(hLeft,hRight);
 
         const tableWrap = el('div');
@@ -312,7 +295,7 @@
             <td>${d.weight}</td>
             <td>${d.reps}</td>
             <td>${d.sets}</td>
-            <td>${d.doubled?'<span class="warn">×2（雙邊）</span>':'—'}</td>
+            <td>${d.doubled?'<span class="warn">×2 (bilateral)</span>':'—'}</td>
             <td>${d.vol}</td>
           `;
           tb.appendChild(tr);
@@ -344,9 +327,10 @@
       $('#page2 .stack').insertBefore(st, document.getElementById('resultArea'));
     }
 
+    // ===== Verify by repeated computation (must match 3 times in a row) =====
     $('#btnCompute').addEventListener('click', ()=>{
       $('#p2Error').textContent = '';
-      setStatus('正在計算與驗證（需要連續 3 次結果一致）…','');
+      setStatus('Computing & verifying (need 3 consecutive identical results)…','');
       const choice = $('#bodyChoice').value;
       const target = choice==='1' ? 'Chest' : 'Back';
       const recentN = Math.max(1, parseInt($('#recentCount').value||'4',10));
@@ -358,27 +342,23 @@
 
       for(let attempt=1; attempt<=MAX_ATTEMPTS; attempt++){
         const bundle = computeOnce(target, recentN);
-        if(!bundle.ok){ $('#p2Error').textContent = bundle.error||'資料不足'; setStatus('',''); return; }
-        bestBundle = bundle; // keep the latest good one
+        if(!bundle.ok){ $('#p2Error').textContent = bundle.error||'Insufficient data.'; setStatus('',''); return; }
+        bestBundle = bundle;
         if(lastDigest===bundle.digest){
           stableCount++;
         } else {
           lastDigest = bundle.digest;
           stableCount = 1;
         }
-
         if(stableCount>=3){
-          setStatus(`驗證通過：結果已連續 3 次一致（嘗試 ${attempt} 次）。`,'ok');
+          setStatus(`Verification passed: same result 3 times in a row (tries: ${attempt}).`,'ok');
           renderResult(bundle);
           return;
         }
       }
-
-      // If we reach here, could not stabilize
       setStatus('', '');
-      $('#p2Error').textContent = '多次重新計算仍未達到連續 3 次一致。請檢查原始資料格式（例如缺少逗號、數字單位或混入游泳等非重量紀錄），再試一次。';
+      $('#p2Error').textContent = 'Could not reach 3 consecutive identical results after multiple attempts. Check raw data formatting (date must be followed by a comma, numeric units, no swim-only rows), then try again.';
       if(bestBundle && bestBundle.ok){
-        // Show latest attempt anyway for reference
         renderResult(bestBundle);
       }
     });
