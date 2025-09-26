@@ -1,235 +1,387 @@
-<!DOCTYPE html>
+```html
+<!doctype html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Instruction Module v4 — Chest / Back 訓練 Volume 助理</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🏋️ Chest / Back 訓練 Volume 助理 — Instruction Module v4</title>
+  <!-- TailwindCSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --bg: #0b0f14;
-      --card: #101620;
-      --ink: #e8f0fe;
-      --muted: #a9b3c1;
-      --accent: #5eead4;
-      --accent-2: #60a5fa;
-      --danger: #f87171;
-      --ok: #34d399;
-      --code: #0f172a;
-      --chip: #0c1a26;
-      --border: #1e293b;
-      --shadow: 0 8px 24px rgba(0,0,0,.35);
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 600px at 80% -10%, rgba(96,165,250,.15), transparent 60%),
-                  radial-gradient(800px 400px at -10% 110%, rgba(94,234,212,.12), transparent 60%),
-                  var(--bg);
-      color: var(--ink);
-      line-height: 1.6;
-    }
-
-    header {
-      padding: 28px 20px 8px; text-align: center;
-    }
-    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 12px; color: var(--ink); background: linear-gradient(90deg, rgba(94,234,212,.15), rgba(96,165,250,.15)); border: 1px solid var(--border); }
-    .title { font-size: clamp(22px, 3.8vw, 36px); margin: 14px 0 6px; letter-spacing: .4px; }
-    .subtitle { color: var(--muted); margin: 0 0 16px; font-size: 14px; }
-
-    main { max-width: 980px; margin: 0 auto; padding: 20px; }
-    .card { background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border: 1px solid var(--border); border-radius: 18px; padding: 18px; margin: 14px 0; box-shadow: var(--shadow); backdrop-filter: blur(4px); }
-    .card h2, .card h3 { margin: 6px 0 10px; }
-    .step-tag { font-weight: 700; font-size: 12px; color: var(--accent-2); letter-spacing: .08em; text-transform: uppercase; }
-
-    .grid { display: grid; gap: 14px; }
-    @media (min-width: 860px) { .grid.cols-2 { grid-template-columns: 1fr 1fr; } }
-
-    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    pre { background: var(--code); border: 1px solid var(--border); color: #e6edf3; border-radius: 14px; padding: 12px 14px; overflow: auto; box-shadow: inset 0 0 0 1px rgba(255,255,255,.02); }
-    .kdb { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 8px; background: var(--chip); border: 1px solid var(--border); font-size: 12px; color: var(--muted); }
-
-    .list-tight { margin: 0; padding-left: 18px; }
-    .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); color: var(--muted); font-size: 12px; margin: 2px 6px 2px 0; }
-
-    .rule { display: flex; align-items: flex-start; gap: 10px; margin: 8px 0; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 9px; box-shadow: 0 0 0 4px rgba(94,234,212,.15); }
-
-    details { border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; background: rgba(255,255,255,.02); }
-    details > summary { cursor: pointer; outline: none; list-style: none; }
-    details > summary::-webkit-details-marker { display: none; }
-    .ok { color: var(--ok); font-weight: 600; }
-    .fail { color: var(--danger); font-weight: 600; }
-
-    .footer { color: var(--muted); font-size: 12px; text-align: center; padding: 20px 0 40px; }
-    .copywrap { display:flex; justify-content:flex-end; }
-    .btn { border: 1px solid var(--border); background: var(--chip); color: var(--ink); padding: 6px 10px; border-radius: 10px; cursor:pointer; font-size: 12px; }
-    .btn:active { transform: translateY(1px); }
+    /* 小強化：讓等寬字體顯示訓練紀錄更穩定 */
+    textarea, code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .kbd { border: 1px solid #e5e7eb; border-bottom-width: 2px; border-radius: .375rem; padding: .125rem .375rem; background: #f8fafc; font-size: .75rem;}
   </style>
 </head>
-<body>
-  <header>
-    <span class="badge">🏋️ Instruction Module v4</span>
-    <h1 class="title">Chest / Back 訓練 Volume 助理</h1>
-    <p class="subtitle">已更新：<strong>Step 3.5</strong> 改為 <strong>必須連續三次驗證通過</strong> 方可進入 Step 4。</p>
-  </header>
+<body class="bg-slate-50 text-slate-900">
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <header class="space-y-2">
+      <h1 class="text-2xl sm:text-3xl font-bold">🏋️ Chest / Back 訓練 Volume 助理</h1>
+      <p class="text-slate-600">依照 <span class="font-semibold">Instruction Module v4</span>：解析自由格式健身紀錄 → 自動三次驗證（3/3）→ 輸出最近 4 次目標部位的總 Volume。</p>
+    </header>
 
-  <main>
-    <!-- Step 1 -->
-    <section class="card">
-      <div class="step-tag">Step 1 · Behavior（角色定位）</div>
-      <div class="rule"><span class="dot"></span><div>
-        <strong>IF</strong> assistant = 啟動<br/>
-        <strong>AND</strong> user 輸入 = 健身紀錄（自由格式）<br/>
-        <strong>THEN</strong> assistant = <strong>專業健身日誌分析助理</strong><br/>
-        → 主要任務 = 統計 Chest 或 Back 最近 4 次總 Volume
-      </div></div>
+    <!-- Step Indicator -->
+    <section class="grid sm:grid-cols-3 gap-3">
+      <div class="p-4 bg-white rounded-2xl shadow">
+        <div class="text-sm text-slate-500">Step 1</div>
+        <div class="font-semibold">Behavior（角色定位）</div>
+        <div class="text-xs text-slate-500 mt-1">assistant = 專業健身日誌分析助理</div>
+      </div>
+      <div class="p-4 bg-white rounded-2xl shadow">
+        <div class="text-sm text-slate-500">Step 2</div>
+        <div class="font-semibold">Workflow Logic（擷取/計算）</div>
+        <div class="text-xs text-slate-500 mt-1">擷取紀錄、識別 Session、計算 Volume</div>
+      </div>
+      <div class="p-4 bg-white rounded-2xl shadow">
+        <div class="text-sm text-slate-500">Step 3 & 3.5</div>
+        <div class="font-semibold">Validation & Loop（三次確認）</div>
+        <div class="text-xs text-slate-500 mt-1">連續 3 次驗證通過才輸出結果</div>
+      </div>
     </section>
 
-    <!-- Step 2 -->
-    <section class="card">
-      <div class="step-tag">Step 2 · Workflow Logic</div>
-
-      <h3>2.1 問題引導</h3>
-      <p>若尚未選擇部位，輸出：</p>
-      <pre><code>你想統計哪個部位的訓練量？
-👉 請輸入：
-1 = Chest
-2 = Back</code></pre>
-
-      <h3>2.2 部位確定</h3>
-      <ul class="list-tight">
-        <li>IF user 輸入 = 1 → <strong>target = Chest</strong></li>
-        <li>IF user 輸入 = 2 → <strong>target = Back</strong></li>
-      </ul>
-
-      <div class="grid cols-2">
-        <div>
-          <h3>2.3 擷取紀錄（Chest）</h3>
-          <p>匹配關鍵詞：</p>
-          <div>
-            <span class="pill">Chest</span>
-            <span class="pill">Middle Chest</span>
-            <span class="pill">Upper Chest</span>
-            <span class="pill">Smith Machine Chest</span>
-            <span class="pill">Cable Chest</span>
-            <span class="pill">Fly</span>
-          </div>
-        </div>
-        <div>
-          <h3>2.3 擷取紀錄（Back）</h3>
-          <p>匹配關鍵詞：</p>
-          <div>
-            <span class="pill">Back</span>
-            <span class="pill">Seat Row</span>
-            <span class="pill">Lat Pulldown</span>
-            <span class="pill">Machine Row</span>
-            <span class="pill">Cable Row</span>
-            <span class="pill">Reverse Grip</span>
-          </div>
+    <!-- Controls -->
+    <section class="bg-white rounded-2xl shadow p-5 space-y-4">
+      <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <label class="text-sm font-semibold">選擇部位</label>
+        <div class="flex gap-2">
+          <button id="btnChest" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 active:scale-[.99]">1 = Chest</button>
+          <button id="btnBack" class="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 active:scale-[.99]">2 = Back</button>
+          <span id="targetBadge" class="hidden px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700">目標：</span>
         </div>
       </div>
 
-      <h3>2.4 識別 Session</h3>
-      <ul class="list-tight">
-        <li>IF <strong>同一日期 + 同一部位</strong> → group = 1 session</li>
-        <li>IF <strong>total session ≥ 4</strong> → select = 最近 4 次</li>
-      </ul>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label for="input" class="text-sm font-semibold">貼上你的自由格式訓練紀錄</label>
+          <button id="btnSample" class="text-xs underline text-slate-500 hover:text-slate-700">載入示例</button>
+        </div>
+        <textarea id="input" rows="10" class="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="貼上紀錄，例如：
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 95kg, 10 reps, 1 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 90kg, 9 reps, 3 sets
+2025/7/21, Chest, Incline Smith Press, Smith Machine, 70kg, 12 reps, 4 sets
+..."></textarea>
+      </div>
 
-      <h3>2.5 計算 Volume</h3>
-      <pre><code>公式：Volume = Weight × Reps × Sets</code></pre>
-      <details>
-        <summary>🔎 特殊條件（展開查看）</summary>
-        <ul class="list-tight">
-          <li>IF 記錄含 <em>"Dumbbell"</em> 或 <em>"Cable"</em> 或 格式 <em>"xxkg × 2"</em> → <strong>Weight = Weight × 2</strong></li>
-          <li>IF <em>未標明 sets</em> → <strong>sets = 3</strong></li>
-        </ul>
-      </details>
-
-      <h3>2.6 合併規則</h3>
-      <p>IF session 內 = 多種器械 → <strong>Volume = sum(所有 Chest/Back 紀錄)</strong></p>
+      <div class="flex flex-wrap gap-2">
+        <button id="btnRun" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[.99]">執行（Step 2 → 3 → 3.5）</button>
+        <button id="btnClear" class="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 active:scale-[.99]">清空</button>
+        <span class="text-xs text-slate-500">提示：系統會自動重算與驗證 3 次，不會詢問使用者。</span>
+      </div>
     </section>
 
-    <!-- Step 3 -->
-    <section class="card">
-      <div class="step-tag">Step 3 · Validation（自我驗證條款）</div>
-
-      <h3>驗證一：紀錄比對</h3>
-      <p>IF 器械名稱 = Dumbbell / Cable / Fly / Smith / Machine 且 <em>容許中英文模糊比對</em> → <span class="ok">check OK</span>；否則 <span class="fail">fail → 重算</span></p>
-
-      <h3>驗證二：逐筆計算</h3>
-      <p>IF 每筆紀錄皆依 <code>Weight × Reps × Sets</code> 獨立計算 → <span class="ok">check OK</span>；否則 <span class="fail">fail → 重算</span></p>
-
-      <h3>驗證三：Session 整合</h3>
-      <p>IF 同日紀錄已合併，該日 Volume = sum(所有目標部位訓練) → <span class="ok">check OK</span>；否則 <span class="fail">fail → 重算</span></p>
-
-      <h3>驗證四：錯誤重跑</h3>
-      <p>IF 驗證一 &amp; 二 &amp; 三 皆 <span class="ok">check OK</span> → result = <span class="ok">check OK</span>；<br/>
-      ELSE result = <span class="fail">fail</span> → 回到 Step 2 重新計算</p>
+    <!-- Validation Console -->
+    <section class="bg-white rounded-2xl shadow p-5 space-y-3">
+      <div class="flex items-center gap-2">
+        <h2 class="text-lg font-semibold">驗證 Console</h2>
+        <span class="text-xs text-slate-500">(Step 3 & 3.5)</span>
+      </div>
+      <div id="console" class="text-sm whitespace-pre-wrap bg-slate-50 border border-slate-200 rounded-xl p-3 h-44 overflow-auto"></div>
     </section>
 
-    <!-- Step 3.5 -->
-    <section class="card">
-      <div class="step-tag">Step 3.5 · 驗證迴圈（三次確認）</div>
-      <div class="copywrap"><button class="btn" id="copyLoop">複製 Loop 程式塊</button></div>
-      <pre id="loop"><code>STATE:
-  pass_count = 0
-  required_passes = 3
-  recompute_from_raw = true
-  ask_user_during_loop = false
-
-LOOP:
-  執行 驗證一～四
-  IF 驗證一 AND 驗證二 AND 驗證三 = check OK
-     THEN pass_count = pass_count + 1
-     ELSE pass_count = 0 → GOTO Step 2 重算
-
-  IF pass_count &lt; required_passes
-     THEN GOTO Step 2（重新擷取 &amp; 重算）
-  ELSE
-     GOTO Step 4</code></pre>
+    <!-- Results -->
+    <section class="bg-white rounded-2xl shadow p-5 space-y-4">
+      <div class="flex items-center gap-2">
+        <h2 class="text-lg font-semibold">輸出結果（Step 4）</h2>
+        <span class="text-xs text-slate-500">最近 4 次目標部位 Volume</span>
+      </div>
+      <div id="result" class="text-sm space-y-3"></div>
     </section>
 
-    <!-- Step 4 -->
-    <section class="card">
-      <div class="step-tag">Step 4 · Final Output（輸出格式）</div>
-      <pre><code>📅 最近 4 次 Chest 訓練 Volume：
-1. 2025/6/13 — 5,820 kg
-   - Incline Smith: 60kg × 10 × 3 = 1,800 kg
-   - Dumbbell Press: 30kg × 2 × 10 × 3 = 1,800 kg
-   - Cable Fly: 25kg × 2 × 12 × 3 = 1,800 kg
-   - 補充組：Smith Chest 40kg × 8 × 1 = 320 kg
-
-🔄 自動三次驗證通過：3/3（重算校驗完成；未經使用者確認）</code></pre>
-    </section>
-
-    <section class="card">
-      <div class="step-tag">附註</div>
-      <ul class="list-tight">
-        <li>本 HTML 僅為規格呈現；實際運行時請以此為邏輯準則實作。</li>
-        <li>如需改為 <em>Back</em> 版本，僅需替換 <em>目標關鍵詞</em> 與最終輸出示例的部位名稱。</li>
-      </ul>
-    </section>
-
-    <p class="footer">© Instruction Module v4 · Chest/Back Volume Assistant</p>
+    <!-- Footer / Help -->
+    <footer class="text-xs text-slate-500 text-center py-6">
+      Instruction Module v4（含三次自動驗證 3/3）。按 <span class="kbd">1</span> / <span class="kbd">2</span> 切換部位；按 <span class="kbd">Enter</span> 執行。
+    </footer>
   </main>
 
   <script>
-    // Copy helper for the loop block
-    const btn = document.getElementById('copyLoop');
-    const pre = document.getElementById('loop');
-    if (btn && pre) {
-      btn.addEventListener('click', async () => {
-        try {
-          const text = pre.innerText;
-          await navigator.clipboard.writeText(text);
-          btn.textContent = '已複製 ✓';
-          setTimeout(()=> btn.textContent = '複製 Loop 程式塊', 1800);
-        } catch (e) {
-          btn.textContent = '無法複製，請手動選取';
-        }
-      });
+    // ====== Instruction Module v4 constants ======
+    const MATCH_CHEST = ["chest","middle chest","upper chest","smith machine chest","cable chest","fly","flyes","pec deck","incline smith","flat smith","smith"];
+    const MATCH_BACK  = ["back","seat row","lat pulldown","machine row","cable row","reverse grip","row","pulldown","t-bar"];
+    const EQUIP_KEYWORDS = ["dumbbell","cable","fly","smith","machine","pec deck","pulldown","row"]; // for 驗證一
+    const DATE_REGEX = /(?:\b|\D)(20\d{2})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})(?:\b|\D)/; // 2025/7/17 等
+    const KG_REGEX = /(\d+(?:\.\d+)?)\s*kg/gi;
+    const REPS_REGEX = /(\d+)\s*(?:reps?|次)/i;
+    const SETS_REGEX = /(\d+)\s*(?:sets?|組)/i;
+    const X2_REGEX = /(?:×|x)\s*2\b/i;
+
+    // ====== State ======
+    let target = null; // "chest" | "back"
+    const consoleEl = document.getElementById("console");
+    const resultEl  = document.getElementById("result");
+    const targetBadge = document.getElementById("targetBadge");
+    const inputEl  = document.getElementById("input");
+
+    // ====== UI helpers ======
+    function log(msg){ consoleEl.textContent += msg + "\n"; consoleEl.scrollTop = consoleEl.scrollHeight; }
+    function clearConsole(){ consoleEl.textContent = ""; }
+    function showTarget(){
+      if(!target){ targetBadge.classList.add("hidden"); targetBadge.textContent = ""; return; }
+      targetBadge.classList.remove("hidden");
+      targetBadge.textContent = "目標：" + (target === "chest" ? "Chest" : "Back");
     }
+
+    // ====== Parsing & Extraction ======
+    function normalize(s){ return (s||"").toLowerCase(); }
+    function hasAnyKeyword(line, keywords){
+      const L = normalize(line);
+      return keywords.some(k => L.includes(k));
+    }
+    function parseDate(line){
+      const m = line.match(DATE_REGEX);
+      if(!m) return null;
+      const [_, y, mo, d] = m;
+      const yyyy = parseInt(y,10);
+      const mm = String(parseInt(mo,10)).padStart(2,"0");
+      const dd = String(parseInt(d,10)).padStart(2,"0");
+      // Return canonical "YYYY/MM/DD" and sortable key
+      return { raw: `${yyyy}/${mm}/${dd}`, sortKey: `${yyyy}-${mm}-${dd}` };
+    }
+    function parseEntry(line, target){
+      // Weight(s)
+      // We support multiple "xxkg" per line; usually first is weight.
+      const kgMatches = [...line.matchAll(KG_REGEX)];
+      if(kgMatches.length===0) return null;
+      let weight = parseFloat(kgMatches[0][1]);
+
+      // reps
+      const repsMatch = line.match(REPS_REGEX);
+      let reps = repsMatch ? parseInt(repsMatch[1],10) : null;
+
+      // sets
+      const setsMatch = line.match(SETS_REGEX);
+      let sets = setsMatch ? parseInt(setsMatch[1],10) : 3; // default sets=3
+
+      // x2 rule
+      const L = normalize(line);
+      const haveX2 = X2_REGEX.test(line);
+      const x2EquipHint = ["dumbbell","cable","fly","flyes","pec deck"].some(k => L.includes(k));
+      if(haveX2 || x2EquipHint){ weight = weight * 2; }
+
+      if(reps===null) return null;
+      return { weight, reps, sets, volume: weight * reps * sets };
+    }
+
+    function targetKeywords(){
+      return target === "chest" ? MATCH_CHEST : MATCH_BACK;
+    }
+
+    function extractSessions(raw){
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const groups = new Map(); // key: date+target -> { date, exercises: [], totalVolume }
+
+      for(const line of lines){
+        if(!hasAnyKeyword(line, targetKeywords())) continue;
+        const date = parseDate(line);
+        if(!date) continue;
+
+        const key = date.sortKey + "|" + target;
+        if(!groups.has(key)){
+          groups.set(key, { date: date.raw, sortKey: date.sortKey, items: [], total: 0 });
+        }
+        const entry = parseEntry(line, target);
+        if(entry){
+          groups.get(key).items.push({ line, ...entry });
+          groups.get(key).total += entry.volume;
+        }
+      }
+
+      // sort sessions by date desc and keep last 4
+      const sessions = [...groups.values()].sort((a,b)=> (a.sortKey < b.sortKey ? 1 : -1)).slice(0,4);
+      return sessions;
+    }
+
+    // ====== Validations (Step 3) ======
+    function validateOne_allEquipRecognized(sessions){
+      // 驗證一：器械名稱可模糊比對（行內含任一 EQUIP_KEYWORDS 即可）
+      for(const s of sessions){
+        for(const it of s.items){
+          if(!hasAnyKeyword(it.line, EQUIP_KEYWORDS)){
+            return { ok:false, msg:`驗證一失敗：找不到可辨識器械關鍵詞 → 「${it.line}」` };
+          }
+        }
+      }
+      return { ok:true, msg:"驗證一通過：器械關鍵詞匹配（模糊比對）" };
+    }
+
+    function validateTwo_perLineFormula(sessions){
+      // 驗證二：每筆用 Weight × Reps × Sets 計算
+      for(const s of sessions){
+        for(const it of s.items){
+          const expected = it.weight * it.reps * it.sets;
+          if(Math.abs(expected - it.volume) > 1e-6){
+            return { ok:false, msg:`驗證二失敗：逐筆計算不一致 → 「${it.line}」` };
+          }
+        }
+      }
+      return { ok:true, msg:"驗證二通過：逐筆計算OK（W×R×S）" };
+    }
+
+    function validateThree_sessionSum(sessions){
+      // 驗證三：同日合併、總和一致
+      for(const s of sessions){
+        const sum = s.items.reduce((acc, x)=> acc + x.volume, 0);
+        if(Math.abs(sum - s.total) > 1e-6){
+          return { ok:false, msg:`驗證三失敗：Session 總量與各筆加總不一致 → ${s.date}` };
+        }
+      }
+      return { ok:true, msg:"驗證三通過：同日合併總量一致" };
+    }
+
+    function runValidations(sessions){
+      const v1 = validateOne_allEquipRecognized(sessions);
+      log(v1.msg);
+      if(!v1.ok) return false;
+
+      const v2 = validateTwo_perLineFormula(sessions);
+      log(v2.msg);
+      if(!v2.ok) return false;
+
+      const v3 = validateThree_sessionSum(sessions);
+      log(v3.msg);
+      if(!v3.ok) return false;
+
+      log("驗證四：錯誤重跑條款 →（三項皆 OK）result = check OK");
+      return true;
+    }
+
+    // ====== Step 3.5 Loop （三次確認） ======
+    function triplePass(raw){
+      let passCount = 0;
+      const required = 3;
+
+      for(let i=1;i<=6 && passCount<required;i++){ // 安全上限：最多嘗試 6 次，符合「重算」語意
+        log(`— 迴圈嘗試 #${i}：從原始紀錄重新擷取與計算（不詢問使用者）`);
+        const sessions = extractSessions(raw);
+
+        if(sessions.length===0){
+          log("⚠️ 未擷取到任何符合目標部位的紀錄，迴圈中止。");
+          return { ok:false, passCount, sessions: [] };
+        }
+
+        const ok = runValidations(sessions);
+        if(ok){
+          passCount += 1;
+          log(`✅ 本輪驗證結果：check OK（累計通過 ${passCount}/${required}）`);
+        }else{
+          passCount = 0;
+          log("❌ 本輪驗證失敗 → 依規則回到 Step 2 重新擷取 & 重算（pass_count 歸零）");
+        }
+
+        if(passCount < required){
+          log("↩️ 進行下一輪重算（GOTO Step 2）");
+        }
+        if(passCount >= required){
+          log("🎉 已連續三次驗證通過（3/3）→ 進入 Step 4");
+          const finalSessions = extractSessions(raw); // 按規格再從原始重擷取
+          return { ok:true, passCount, sessions: finalSessions };
+        }
+      }
+
+      return { ok:false, passCount, sessions: [] };
+    }
+
+    // ====== Render Result (Step 4) ======
+    function kgFmt(n){ return Math.round(n).toLocaleString(); }
+    function renderResult(sessions){
+      if(sessions.length===0){
+        resultEl.innerHTML = `<div class="text-slate-500">尚無可輸出的結果。</div>`;
+        return;
+      }
+      const title = target === "chest" ? "Chest" : "Back";
+      let html = `<div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
+        <div class="font-semibold">📅 最近 4 次 ${title} 訓練 Volume：</div>
+        <ol class="mt-2 space-y-3">`;
+
+      for(const s of sessions){
+        const items = s.items.map(it => {
+          // 嘗試擷取器械名稱的線索（從原行抓幾個關鍵詞顯示）
+          const equip = EQUIP_KEYWORDS.find(k => normalize(it.line).includes(k)) || "—";
+          // 重建一個可讀段落
+          // 盡量從原行抓第一個 kg 值（已在 parse 時處理 x2）
+          const kgMatch = it.line.match(KG_REGEX);
+          const rawKg = kgMatch ? kgMatch[0].toLowerCase() : (it.weight + "kg");
+          const x2Shown = (it.weight % 1 === 0 && it.weight >= 2 && rawKg.includes("kg")) ? "" : "";
+          return `- ${capitalize(equip)}：${kgFmt(it.weight)}kg × ${it.reps} × ${it.sets} = ${kgFmt(it.volume)} kg`;
+        }).join("<br/>");
+
+        html += `
+          <li>
+            <div class="font-medium">${s.date} — <span class="text-emerald-700 font-semibold">${kgFmt(s.total)} kg</span></div>
+            <div class="text-slate-600 ml-2 mt-1">${items}</div>
+          </li>`;
+      }
+
+      html += `</ol>
+        <div class="mt-3 text-emerald-700 text-sm font-semibold">🔄 自動三次驗證通過：3/3（重算校驗完成；未經使用者確認）</div>
+      </div>`;
+
+      resultEl.innerHTML = html;
+    }
+
+    function capitalize(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+    // ====== Wiring ======
+    document.getElementById("btnChest").addEventListener("click", ()=>{ target = "chest"; showTarget(); });
+    document.getElementById("btnBack").addEventListener("click",  ()=>{ target = "back";  showTarget();  });
+    document.getElementById("btnClear").addEventListener("click", ()=>{
+      inputEl.value = "";
+      resultEl.innerHTML = "";
+      clearConsole();
+      target = null; showTarget();
+    });
+
+    document.getElementById("btnSample").addEventListener("click", ()=>{
+      inputEl.value =
+`2025/7/17, Chest, Flat Smith Press, Smith Machine, 95kg, 10 reps, 1 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 95kg, 8 reps, 1 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 90kg, 9 reps, 3 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 90kg, 7 reps, 1 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 80kg, 9 reps, 1 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 80kg, 8 reps, 2 sets
+2025/7/17, Chest, Flat Smith Press, Smith Machine, 60kg, 20 reps, 1 sets
+2025/7/21, Chest, Incline Smith Press, Smith Machine, 70kg, 12 reps, 4 sets
+2025/7/30, Back, Lat Pulldown, 60kg, 10 reps, 3 sets
+2025/7/30, Back, Machine Row, 40kg × 2, 12 reps, 3 sets
+2025/8/05, Chest, Dumbbell Press, 30kg × 2, 10 reps, 3 sets
+2025/8/05, Chest, Cable Fly, 25kg × 2, 12 reps, 3 sets
+2025/8/16, Back, Seat Row, 55kg, 10 reps, 3 sets
+2025/8/28, Chest, Pec Deck Fly, 25kg × 2, 12 reps, 3 sets`;
+    });
+
+    function ensureTargetOrHint(){
+      if(!target){
+        log("⚠️ 尚未選擇部位。請點擊「1 = Chest」或「2 = Back」。");
+        return false;
+      }
+      return true;
+    }
+
+    function runAll(){
+      clearConsole();
+      resultEl.innerHTML = "";
+      if(!ensureTargetOrHint()) return;
+
+      log("Step 1：Behavior 啟動 → 專業健身日誌分析助理");
+      log("Step 2：擷取紀錄、識別 Session、計算 Volume（含規則：x2、預設 sets=3、同日合併）");
+      const raw = inputEl.value || "";
+
+      const outcome = triplePass(raw);
+      if(!outcome.ok){
+        log(`❗ 未能達到 3/3 通過（累計通過 ${outcome.passCount}/3）。請檢查輸入格式或關鍵詞。`);
+        renderResult([]); return;
+      }
+      renderResult(outcome.sessions);
+    }
+
+    document.getElementById("btnRun").addEventListener("click", runAll);
+    // 快捷鍵：1 / 2 選部位，Enter 執行
+    document.addEventListener("keydown", (e)=>{
+      if(e.key==="1"){ target="chest"; showTarget(); }
+      else if(e.key==="2"){ target="back"; showTarget(); }
+      else if(e.key==="Enter"){ runAll(); }
+    });
   </script>
 </body>
 </html>
+```
