@@ -38,6 +38,8 @@
     .footer{margin-top:14px;font-size:12px;color:#8aa0b6}
     .hidden{display:none}
     code{background:#0b1222;border:1px solid #1f2937;border-radius:8px;padding:2px 6px}
+    @keyframes shake {10%, 90% {transform: translateX(-1px);} 20%, 80% {transform: translateX(2px);} 30%, 50%, 70% {transform: translateX(-4px);} 40%, 60% {transform: translateX(4px);} }
+    .shake {animation: shake .4s linear 1}
   </style>
 </head>
 <body>
@@ -70,6 +72,7 @@
           <div class="row">
             <button class="btn btn-secondary" id="backTo1">← Back</button>
             <button class="btn btn-primary" id="btnCompute">Compute Volume</button>
+            <button class="btn btn-secondary" id="btnExport" title="Export computed data for ChatGPT analysis" disabled>Export → Page 3</button>
           </div>
         </div>
 
@@ -103,6 +106,24 @@
         <div class="footer">Tip: click a date row to expand details.</div>
       </div>
     </section>
+
+    <div style="height:14px"></div>
+
+    <!-- Page 3: export & copy -->
+    <section id="page3" class="card hidden">
+      <div class="stack">
+        <div class="row" style="align-items:center;justify-content:space-between">
+          <div class="pill">STEP 3 | Export & Copy</div>
+          <div class="row">
+            <button class="btn btn-secondary" id="backTo2">← Back</button>
+            <button class="btn btn-primary" id="btnCopy">Copy to Clipboard</button>
+          </div>
+        </div>
+        <label class="muted">This is a clean, structured export of your computed results. Click <b>Copy</b>, then paste into ChatGPT for analysis.</label>
+        <textarea id="exportBox" readonly placeholder="Run a calculation first, then click Export."></textarea>
+        <div class="note" id="copyMsg"></div>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -126,7 +147,7 @@
       return dt && dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===d;
     }
 
-    // Build a YYYY-MM-DD key based on **local timezone** (avoid UTC shift)
+    // Build a YYYY-MM-DD key based on local timezone (avoid UTC shift)
     function dateKeyOf(dt){
       const y = dt.getFullYear();
       const m = String(dt.getMonth()+1).padStart(2,'0');
@@ -137,17 +158,14 @@
     // Find a date token that is followed by a comma (spaces allowed before the comma)
     function findDateWithComma(rawLine){
       const s = String(rawLine);
-      const commaIdx = s.indexOf(',');
-      if(commaIdx===-1) return null;
-      // Allow spaces before the comma
-      let pre = s.slice(0, commaIdx);
-      // rtrim spaces
-      while(pre.length && pre[pre.length-1]===' ') pre = pre.slice(0,-1);
-      if(!isValidDateToken(pre)) return null;
-      const parts = pre.includes('/') ? pre.split('/') : pre.split('-');
+      const match = s.match(/(20\d{2}[\/-]\d{1,2}[\/-]\d{1,2})\s*,/);
+      if(!match) return null;
+      const token = match[1];
+      if(!isValidDateToken(token)) return null;
+      const parts = token.includes('/') ? token.split('/') : token.split('-');
       const y = parseInt(parts[0],10), m = parseInt(parts[1],10), d = parseInt(parts[2],10);
       const date = new Date(y, m-1, d);
-      return { date, token: pre };
+      return { date, token };
     }
 
     function extractNumber(token){
@@ -164,7 +182,7 @@
       const equip = (info.equipment||'').toLowerCase();
       const dblByEquip = equip.includes('dumbbell') || equip.includes('cable');
       const wr = (info.weightRaw||'').toLowerCase();
-      const dblByWeight = wr.includes('x2') || wr.includes('×2');
+      const dblByWeight = /x\s*2|×\s*2/.test(wr);
       return dblByEquip || dblByWeight;
     }
 
@@ -173,12 +191,8 @@
       if(!found) return null;
       const date = found.date;
 
-      const parts = line.split(',').map(s=>s.trim()).filter(Boolean);
-      // ensure first token is a date token
-      let dateIdx = -1;
-      for(let i=0;i<parts.length;i++){
-        if(isValidDateToken(parts[i])){ dateIdx = i; break; }
-      }
+      const parts = line.split(',').map(s=>s.trim());
+      const dateIdx = parts.findIndex(p => isValidDateToken(p));
       if(dateIdx===-1) return null;
 
       const body = parts[dateIdx+1] || '';
@@ -188,9 +202,9 @@
       const repsRaw = parts[dateIdx+5] || '';
       const setsRaw = parts[dateIdx+6] || '';
 
-      let weight = extractNumber(weightRaw);
-      let reps = extractNumber(repsRaw);
-      let sets = extractNumber(setsRaw);
+      const weight = extractNumber(weightRaw);
+      const reps = extractNumber(repsRaw);
+      const sets = extractNumber(setsRaw);
 
       return { line, date, dateKey: dateKeyOf(date), body, exercise, equipment, weight, reps, sets, weightRaw, repsRaw, setsRaw };
     }
@@ -204,15 +218,15 @@
 
     // ===== State =====
     let parsed = [];
+    let lastBundle = null;
 
     // ===== Page 1 actions =====
     $('#toPage2').addEventListener('click',()=>{
       $('#p1Error').textContent = '';
       const txt = $('#rawInput').value.trim();
       if(!txt){ $('#p1Error').textContent = 'Please paste your logs first.'; return; }
-      const lines = txt.split(/
-?
-+/).map(s=>s.trim()).filter(Boolean);
+      // robust line split for Windows/Unix/Mac
+      const lines = txt.split(/\r?\n+/).map(s=>s.trim()).filter(Boolean);
       parsed = lines.map(parseLine).filter(Boolean);
       if(!parsed.length){ $('#p1Error').textContent = 'No valid lines parsed. Ensure the date has "/" or "-" and is immediately followed by a comma.'; return; }
       $('#page1').classList.add('hidden');
@@ -275,6 +289,9 @@
     }
 
     function renderResult(bundle){
+      // remember for export
+      lastBundle = bundle;
+
       $('#kpiPart').textContent = bundle.target;
       $('#kpiDays').textContent = bundle.pickedDates.length;
       $('#kpiTotal').textContent = Intl.NumberFormat('en-US').format(bundle.total);
@@ -318,6 +335,10 @@
         });
         resultArea.appendChild(sec);
       });
+
+      // enable export button
+      const ex = document.getElementById('btnExport');
+      if(ex) ex.disabled = false;
     }
 
     function setStatus(msg, cls){
@@ -333,16 +354,16 @@
       st.id = 'p2Status';
       st.className = 'note';
       st.style.marginTop = '6px';
-      $('#page2 .stack').insertBefore(st, document.getElementById('resultArea'));
+      document.querySelector('#page2 .stack').insertBefore(st, document.getElementById('resultArea'));
     }
 
     // ===== Verify by repeated computation (must match 3 times in a row) =====
-    $('#btnCompute').addEventListener('click', ()=>{
-      $('#p2Error').textContent = '';
+    document.getElementById('btnCompute').addEventListener('click', ()=>{
+      document.getElementById('p2Error').textContent = '';
       setStatus('Computing & verifying (need 3 consecutive identical results)…','');
-      const choice = $('#bodyChoice').value;
+      const choice = document.getElementById('bodyChoice').value;
       const target = choice==='1' ? 'Chest' : 'Back';
-      const recentN = Math.max(1, parseInt($('#recentCount').value||'4',10));
+      const recentN = Math.max(1, parseInt(document.getElementById('recentCount').value||'4',10));
 
       let lastDigest = null;
       let stableCount = 0;
@@ -351,7 +372,7 @@
 
       for(let attempt=1; attempt<=MAX_ATTEMPTS; attempt++){
         const bundle = computeOnce(target, recentN);
-        if(!bundle.ok){ $('#p2Error').textContent = bundle.error||'Insufficient data.'; setStatus('',''); return; }
+        if(!bundle.ok){ document.getElementById('p2Error').textContent = bundle.error||'Insufficient data.'; setStatus('',''); return; }
         bestBundle = bundle;
         if(lastDigest===bundle.digest){
           stableCount++;
@@ -366,9 +387,65 @@
         }
       }
       setStatus('', '');
-      $('#p2Error').textContent = 'Could not reach 3 consecutive identical results after multiple attempts. Check raw data formatting (date must be followed by a comma, numeric units, no swim-only rows), then try again.';
+      document.getElementById('p2Error').textContent = 'Could not reach 3 consecutive identical results after multiple attempts. Check raw data formatting (date must be followed by a comma, numeric units, no swim-only rows), then try again.';
       if(bestBundle && bestBundle.ok){
         renderResult(bestBundle);
+      }
+    });
+
+    // ===== Export (Page 3) =====
+    function buildExportText(bundle){
+      const lines = [];
+      lines.push(`# Export for ChatGPT`);
+      lines.push(`# BodyPart: ${bundle.target}`);
+      lines.push(`# Days: ${bundle.pickedDates.length}`);
+      lines.push(`# TotalVolume: ${bundle.total}`);
+      bundle.perDate.forEach(group => {
+        lines.push('');
+        lines.push(`## ${group.dk} | DayVolume=${group.subtotal}`);
+        lines.push('Date, BodyPart, Exercise, Equipment, Weight, Reps, Sets, BilateralApplied, Volume');
+        group.details.forEach(d => {
+          const w = String(d.weight).replace(/[\s]/g,'');
+          const row = [group.dk, bundle.target, d.exercise||'-', d.equipment||'-', w||'-', d.reps||'-', d.sets||'-', d.doubled?'true':'false', d.vol];
+          lines.push(row.map(x=>String(x)).join(', '));
+        });
+      });
+      return lines.join('\n');
+    }
+
+    // Back to page 2
+    document.getElementById('backTo2').addEventListener('click', ()=>{
+      document.getElementById('page3').classList.add('hidden');
+      document.getElementById('page2').classList.remove('hidden');
+      document.getElementById('copyMsg').textContent = '';
+    });
+
+    // Export button
+    document.getElementById('btnExport').addEventListener('click', ()=>{
+      if(!lastBundle){ setStatus('Please compute first, then export.','warn'); return; }
+      const text = buildExportText(lastBundle);
+      const box = document.getElementById('exportBox');
+      box.value = text;
+      document.getElementById('copyMsg').textContent = '';
+      document.getElementById('page2').classList.add('hidden');
+      document.getElementById('page3').classList.remove('hidden');
+      box.scrollTop = 0;
+    });
+
+    // Copy to clipboard
+    document.getElementById('btnCopy').addEventListener('click', async ()=>{
+      const box = document.getElementById('exportBox');
+      const msg = document.getElementById('copyMsg');
+      try{
+        await navigator.clipboard.writeText(box.value);
+        msg.textContent = 'Copied! Paste this into ChatGPT to analyze.';
+        msg.className = 'note ok';
+      }catch{
+        // Fallback for older browsers
+        box.select();
+        document.execCommand('copy');
+        msg.textContent = 'Copied (fallback). Paste this into ChatGPT to analyze.';
+        msg.className = 'note ok';
       }
     });
   </script>
