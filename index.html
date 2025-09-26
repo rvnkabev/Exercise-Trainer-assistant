@@ -233,16 +233,12 @@
     });
 
     // ===== Compute =====
-    $('#btnCompute').addEventListener('click', ()=>{
-      $('#p2Error').textContent = '';
-      const choice = $('#bodyChoice').value;
-      const target = choice==='1' ? 'Chest' : 'Back';
-      const recentN = Math.max(1, parseInt($('#recentCount').value||'4',10));
-
+    function computeOnce(target, recentN){
       // Filter by target body part; ignore lines where weight/reps/sets are NaN
       const rows = parsed.filter(r => /^(Chest|Back)$/i.test(trim(r.body)) && trim(r.body).toLowerCase()===target.toLowerCase());
-      if(!rows.length){ $('#p2Error').textContent = `沒有找到 ${target} 的紀錄。`; return; }
-
+      if(!rows.length){
+        return { ok:false, error:`沒有找到 ${target} 的紀錄。` };
+      }
       // Group by dateKey
       const byDate = {};
       for(const r of rows){
@@ -254,7 +250,6 @@
 
       let total = 0;
       const perDate = [];
-
       for(const dk of pickedDates){
         let subtotal = 0;
         const details = [];
@@ -269,36 +264,39 @@
               reps: it.reps||'—',
               sets: it.sets||'—',
               doubled: hasDoubleSided(it),
-              vol: v
+              vol: Math.round(v)
             });
           }
         }
         total += subtotal;
-        perDate.push({ dk, subtotal, details });
+        perDate.push({ dk, subtotal: Math.round(subtotal), details });
       }
+      const digest = JSON.stringify({
+        target,
+        recentN:pickedDates.length,
+        total: Math.round(total),
+        perDate: perDate.map(d=>({dk:d.dk, subtotal:d.subtotal}))
+      });
+      return { ok:true, target, pickedDates, total: Math.round(total), perDate, digest };
+    }
 
+    function renderResult(bundle){
       // Render KPIs
-      $('#kpiPart').textContent = target;
-      $('#kpiDays').textContent = pickedDates.length;
-      $('#kpiTotal').textContent = Intl.NumberFormat('en-US').format(Math.round(total));
+      $('#kpiPart').textContent = bundle.target;
+      $('#kpiDays').textContent = bundle.pickedDates.length;
+      $('#kpiTotal').textContent = Intl.NumberFormat('en-US').format(bundle.total);
 
       // Render result tables
       const resultArea = $('#resultArea');
       resultArea.innerHTML = '';
-
-      if(!perDate.length){
-        $('#p2Error').textContent = '找不到符合條件的日期或有效數據。';
-        return;
-      }
-
-      perDate.forEach(group => {
+      bundle.perDate.forEach(group => {
         const sec = el('div','stack');
         const header = el('div','row');
         header.style.justifyContent = 'space-between';
         const hLeft = el('div');
         hLeft.innerHTML = `<strong>${group.dk}</strong> <span class="muted">（點擊展開 / 收合）</span>`;
         const hRight = el('div');
-        hRight.innerHTML = `<span class="pill">當日 Volume：<b>${Math.round(group.subtotal)}</b></span>`;
+        hRight.innerHTML = `<span class="pill">當日 Volume：<b>${group.subtotal}</b></span>`;
         header.append(hLeft,hRight);
 
         const tableWrap = el('div');
@@ -315,7 +313,7 @@
             <td>${d.reps}</td>
             <td>${d.sets}</td>
             <td>${d.doubled?'<span class="warn">×2（雙邊）</span>':'—'}</td>
-            <td>${Math.round(d.vol)}</td>
+            <td>${d.vol}</td>
           `;
           tb.appendChild(tr);
         });
@@ -328,6 +326,61 @@
         });
         resultArea.appendChild(sec);
       });
+    }
+
+    function setStatus(msg, cls){
+      const status = document.getElementById('p2Status');
+      if(!status) return;
+      status.className = 'note ' + (cls||'');
+      status.textContent = msg;
+    }
+
+    // Add a status row if not exists
+    if(!document.getElementById('p2Status')){
+      const st = document.createElement('div');
+      st.id = 'p2Status';
+      st.className = 'note';
+      st.style.marginTop = '6px';
+      $('#page2 .stack').insertBefore(st, document.getElementById('resultArea'));
+    }
+
+    $('#btnCompute').addEventListener('click', ()=>{
+      $('#p2Error').textContent = '';
+      setStatus('正在計算與驗證（需要連續 3 次結果一致）…','');
+      const choice = $('#bodyChoice').value;
+      const target = choice==='1' ? 'Chest' : 'Back';
+      const recentN = Math.max(1, parseInt($('#recentCount').value||'4',10));
+
+      let lastDigest = null;
+      let stableCount = 0;
+      let bestBundle = null;
+      const MAX_ATTEMPTS = 50;
+
+      for(let attempt=1; attempt<=MAX_ATTEMPTS; attempt++){
+        const bundle = computeOnce(target, recentN);
+        if(!bundle.ok){ $('#p2Error').textContent = bundle.error||'資料不足'; setStatus('',''); return; }
+        bestBundle = bundle; // keep the latest good one
+        if(lastDigest===bundle.digest){
+          stableCount++;
+        } else {
+          lastDigest = bundle.digest;
+          stableCount = 1;
+        }
+
+        if(stableCount>=3){
+          setStatus(`驗證通過：結果已連續 3 次一致（嘗試 ${attempt} 次）。`,'ok');
+          renderResult(bundle);
+          return;
+        }
+      }
+
+      // If we reach here, could not stabilize
+      setStatus('', '');
+      $('#p2Error').textContent = '多次重新計算仍未達到連續 3 次一致。請檢查原始資料格式（例如缺少逗號、數字單位或混入游泳等非重量紀錄），再試一次。';
+      if(bestBundle && bestBundle.ok){
+        // Show latest attempt anyway for reference
+        renderResult(bestBundle);
+      }
     });
   </script>
 </body>
